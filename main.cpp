@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <iostream>
 #include "Render.h"
+#include "InputManager.h"
 
 LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam);
 bool bCanExit = false;
@@ -36,7 +37,7 @@ int main()
         WS_OVERLAPPEDWINDOW,
         0,
         0,
-        800,
+        600,
         600,
         nullptr,
         nullptr,
@@ -80,6 +81,7 @@ int main()
 
 LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam)
 {
+	auto InputMng = InputManager::GetInstance();
     switch (UMsg) 
     {
     case WM_KEYUP: 
@@ -88,7 +90,60 @@ LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam)
         {
             bCanExit = true;
         }
+		else if (WParam == 'W')
+		{
+			InputMng->FrontDelta = 0;
+		}
+		else if (WParam == 'S')
+		{
+			InputMng->FrontDelta = 0;
+		}
+		else if (WParam == 'A')
+		{
+			InputMng->RightDelta = 0;
+		}
+		else if (WParam == 'D')
+		{
+			InputMng->RightDelta = 0;
+		}
+		else if (WParam == 'Q')
+		{
+			InputMng->UpDelta = 0;
+		}
+		else if (WParam == 'E')
+		{
+			InputMng->UpDelta = 0;
+		}
+		break;
     }
+	case WM_KEYDOWN: 
+	{
+		if (WParam == 'W')
+		{
+			InputMng->FrontDelta = 0.1;
+		}
+		else if (WParam == 'S')
+		{
+			InputMng->FrontDelta = -0.1;
+		}
+		else if (WParam == 'A')
+		{
+			InputMng->RightDelta = -0.1;
+		}
+		else if (WParam == 'D')
+		{
+			InputMng->RightDelta = 0.1;
+		}
+		else if (WParam == 'Q')
+		{
+			InputMng->UpDelta = 0.1;
+		}
+		else if (WParam == 'E')
+		{
+			InputMng->UpDelta = -0.1;
+		}
+		break;
+	}
     }
     return DefWindowProc(HWnd, UMsg, WParam, LParam);
 }

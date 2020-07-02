@@ -1,30 +1,8 @@
 #pragma once
 
-class Matrix44
-{
-public:
-	Matrix44()
-	{
-		memset(Data, 0, sizeof(Data));
-	}
+#define PI 3.1415926535897932f
 
-	float* operator[](size_t Index)
-	{
-		return Data[Index];
-	}
-
-	static Matrix44 GetIdentity()
-	{
-		Matrix44 Identity;
-		for (int i = 0; i < 4; i++)
-		{
-			Identity[i][i] = 1.f;
-		}
-		return Identity;
-	}
-public:
-	float Data[4][4];
-};
+#define TO_RADIAN(Degree) (Degree * PI / 180.f)
 
 class Vector3D 
 {
@@ -69,15 +47,7 @@ public:
 	{
 	}
 
-	Vector4D operator* (Matrix44 M) 
-	{
-		return Vector4D(
-			X * M[0][0] + Y * M[1][0] + Z * M[2][0] + W * M[3][0],
-			X * M[0][1] + Y * M[1][1] + Z * M[2][1] + W * M[3][1],
-			X * M[0][2] + Y * M[1][2] + Z * M[2][2] + W * M[3][2],
-			X * M[0][3] + Y * M[1][3] + Z * M[2][3] + W * M[3][3]
-		);
-	}
+	Vector4D operator* (class Matrix44 M);
 public:
 	float X;
 	float Y;
@@ -94,6 +64,8 @@ public:
 		Yaw(InYaw),
 		Roll(InRoll)
 	{}
+
+	class Matrix44 GetMatrix();
 public:
 	float Pitch = 0.f;
 	float Yaw = 0.f;

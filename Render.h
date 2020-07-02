@@ -22,10 +22,10 @@ public:
 
 private:
 	void DrawTriangle(Point2D V1, Point2D V2, Point2D V3);
-	void DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3);
-	void DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3);
+	void DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided = false);
+	void DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided = false);
 private:
-    static const int ViewWidth = 800;
+    static const int ViewWidth = 600;
     static const int ViewHeight = 600;
 
     HWND DrawWnd = nullptr;
@@ -36,5 +36,5 @@ private:
     uint32_t* ColorBuffer = nullptr;
 
 	ERenderMode RenderMode = ERenderMode::WireFrame;
-	uint32_t WireFrameThickness = 5;
+	uint32_t WireFrameThickness = 1;
 };

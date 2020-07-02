@@ -27,12 +27,6 @@ void Render::Init(HWND HWnd)
 	BitMap = CreateDIBSection(BufferDC, &BPInfo, DIB_RGB_COLORS, (void**)&ColorBuffer, 0, 0);
 
 	SelectObject(BufferDC, BitMap);
-
-	//Draw back ground
-	for (int i = 0; i < ViewWidth * ViewHeight; i++)
-	{
-		ColorBuffer[i] = 0x0000ff;
-	}
 }
 
 void Render::Exit() 
@@ -49,11 +43,11 @@ void Render::DrawTriangle(Point2D V1, Point2D V2, Point2D V3)
 	Point2D Low = OrderPoints[0];
 	Point2D Mid = OrderPoints[1];
 	Point2D High = OrderPoints[2];
-	if (Mid == Low) 
+	if (Mid.Y == Low.Y) 
 	{
 		DrawUpTriangle(Low, Mid, High);
 	}
-	else if (Mid == High) 
+	else if (Mid.Y == High.Y) 
 	{
 		DrawDownTriangle(Low, Mid, High);
 	}
@@ -62,12 +56,12 @@ void Render::DrawTriangle(Point2D V1, Point2D V2, Point2D V3)
 		Point2D DivPoint;
 		DivPoint.Y = Mid.Y;
 		DivPoint.X = Low.X + (High.X - Low.X) * (Mid.Y - Low.Y) / (High.Y - Low.Y);
-		DrawUpTriangle(DivPoint, Mid, High);
-		DrawDownTriangle(Low, Mid, DivPoint);
+		DrawUpTriangle(DivPoint, Mid, High, true);
+		DrawDownTriangle(Low, Mid, DivPoint, true);
 	}
 }
 
-void Render::DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3)
+void Render::DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 {
 	//注意填充规则
 	//Draw Pixels
@@ -100,21 +94,35 @@ void Render::DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3)
 		}
 		else if (RenderMode == ERenderMode::WireFrame)
 		{
-			for (int i = LeftX - WireFrameThickness / 2; i < (int)LeftX + WireFrameThickness / 2; i++)
+			if (ScanY == (int)V1.Y && !bDivided)
 			{
-				Column = i;
-				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+				for (int i = LeftX; i < (int)RightX; i++)
 				{
-					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					Column = i;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
 				}
 			}
-
-			for (int i = RightX - WireFrameThickness / 2; i < (int)RightX + WireFrameThickness / 2; i++)
+			else 
 			{
-				Column = i;
-				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+				for (int i = LeftX - WireFrameThickness / 2 - 1; i < (int)LeftX + WireFrameThickness / 2; i++)
 				{
-					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					Column = i;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
+				}
+
+				for (int i = RightX - WireFrameThickness / 2 - 1; i < (int)RightX + WireFrameThickness / 2; i++)
+				{
+					Column = i;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
 				}
 			}
 		}
@@ -122,7 +130,7 @@ void Render::DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3)
 	}
 }
 
-void Render::DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3)
+void Render::DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 {
 	//注意填充规则
 	//Draw Pixels
@@ -162,21 +170,35 @@ void Render::DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3)
 		}
 		else if (RenderMode == ERenderMode::WireFrame)
 		{
-			for (int i = LeftX - WireFrameThickness / 2; i < (int)LeftX + WireFrameThickness / 2; i++)
+			if (ScanY == ((int)V3.Y - 1) && !bDivided) 
 			{
-				Column = i;
-				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+				for (int i = LeftX; i < (int)RightX; i++)
 				{
-					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					Column = i;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
 				}
 			}
-
-			for (int i = RightX - WireFrameThickness / 2; i < (int)RightX + WireFrameThickness / 2; i++)
+			else 
 			{
-				Column = i;
-				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+				for (int i = LeftX - WireFrameThickness / 2 - 1; i < (int)LeftX + WireFrameThickness / 2; i++)
 				{
-					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					Column = i;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
+				}
+
+				for (int i = RightX - WireFrameThickness / 2 - 1; i < (int)RightX + WireFrameThickness / 2; i++)
+				{
+					Column = i;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
 				}
 			}
 		}
@@ -186,9 +208,15 @@ void Render::DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3)
 
 void Render::Update()
 {
+	//Draw back ground
+	for (int i = 0; i < ViewWidth * ViewHeight; i++)
+	{
+		ColorBuffer[i] = 0x0000ff;
+	}
+
 	static RawBox* Box = new RawBox();
 	static Camera* DefaultCamera = new Camera();
-
+	DefaultCamera->Update();
 	//TODO:遮挡剔除和背面消隐
 
 	//Coordinate transform
