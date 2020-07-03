@@ -13,6 +13,8 @@ public:
 		Z(ZIn)
 	{
 	}
+
+	class Matrix44 GetMatrix();
 public:
 	float X;
 	float Y;

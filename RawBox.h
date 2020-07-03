@@ -1,5 +1,9 @@
 #pragma once
 
+#include "MathLib.h"
+#include "Matrix44.h"
+#include "InputManager.h"
+
 struct RawColor 
 {
 	float R = 1.f;
@@ -36,6 +40,22 @@ public:
 	}
 	~RawBox() {}
 
+public:
+	Rotator Rotation{ 0,0,0 };
+	Vector3D Location{ 0, 0, 0 };
+	Matrix44 GetWorldMatrix() 
+	{
+		auto Ret = Matrix44::GetIdentity();
+		Ret = Location.GetMatrix() * Rotation.GetMatrix();
+		return Ret;
+	}
+
+	void Update() 
+	{
+		auto InputMng = InputManager::GetInstance();
+		Rotation.Pitch += InputMng->DeltaMove.Y * 0.05;
+		Rotation.Yaw += InputMng->DeltaMove.X * 0.05;
+	}
 public:
 	RawTriangle TriList[12] =
 	{

@@ -34,7 +34,7 @@ private:
     HBITMAP BitMap = nullptr;
 
     uint32_t* ColorBuffer = nullptr;
-
-	ERenderMode RenderMode = ERenderMode::WireFrame;
+public:
+	ERenderMode RenderMode = ERenderMode::Shape;
 	uint32_t WireFrameThickness = 1;
 };

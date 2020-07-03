@@ -64,14 +64,15 @@ void Render::DrawTriangle(Point2D V1, Point2D V2, Point2D V3)
 void Render::DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 {
 	//注意填充规则
+	//统一下加上减，避免毛刺、缺线、多线、重线
 	//Draw Pixels
 	Point2D LeftEnd = V1.X < V2.X ? V1 : V2;
 	Point2D RightEnd = V1.X > V2.X ? V1 : V2;
 
 	//TODO:屏幕空间裁剪
 	//Scane lines
-	int ScanY = V1.Y;
-	while (ScanY < (int)V3.Y)
+	int ScanY = V1.Y + 1;
+	while (ScanY < (int)(V3.Y + 1))
 	{
 		float LeftX = LeftEnd.X + (ScanY - LeftEnd.Y) * (V3.X - LeftEnd.X) / (V3.Y - LeftEnd.Y);
 		float RightX = RightEnd.X + (ScanY - RightEnd.Y) * (V3.X - RightEnd.X) / (V3.Y - RightEnd.Y);
@@ -94,7 +95,7 @@ void Render::DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 		}
 		else if (RenderMode == ERenderMode::WireFrame)
 		{
-			if (ScanY == (int)V1.Y && !bDivided)
+			if (ScanY == (int)(V1.Y + 1) && !bDivided)
 			{
 				for (int i = LeftX; i < (int)RightX; i++)
 				{
@@ -139,8 +140,8 @@ void Render::DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 
 	//TODO:屏幕空间裁剪
 	//Scane lines
-	int ScanY = V1.Y;
-	while (ScanY < (int)V3.Y)
+	int ScanY = V1.Y + 1;
+	while (ScanY < int(V3.Y + 1))
 	{
 		float LeftX = LeftEnd.X + (ScanY - LeftEnd.Y) * (V1.X - LeftEnd.X) / (V1.Y - LeftEnd.Y);
 		float RightX = RightEnd.X + (ScanY - RightEnd.Y) * (V1.X - RightEnd.X) / (V1.Y - RightEnd.Y);
@@ -170,7 +171,7 @@ void Render::DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 		}
 		else if (RenderMode == ERenderMode::WireFrame)
 		{
-			if (ScanY == ((int)V3.Y - 1) && !bDivided) 
+			if (ScanY == (int)V3.Y && !bDivided) 
 			{
 				for (int i = LeftX; i < (int)RightX; i++)
 				{
@@ -216,11 +217,12 @@ void Render::Update()
 
 	static RawBox* Box = new RawBox();
 	static Camera* DefaultCamera = new Camera();
+	Box->Update();
 	DefaultCamera->Update();
 	//TODO:遮挡剔除和背面消隐
 
 	//Coordinate transform
-	Matrix44 WroldMatrix = Matrix44::GetIdentity();
+	Matrix44 WroldMatrix = Box->GetWorldMatrix();
 	Matrix44 CameraMatrix = DefaultCamera->GetCameraMatrix();
 	Matrix44 PerspectiveMatrix = DefaultCamera->GetPerspectiveMatrix();
 	

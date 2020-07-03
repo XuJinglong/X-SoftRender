@@ -17,6 +17,9 @@ public:
 		Location.X += InputMng->FrontDelta * ControlMoveSpeed;
 		Location.Y += InputMng->RightDelta * ControlMoveSpeed;
 		Location.Z += InputMng->UpDelta * ControlMoveSpeed;
+
+		/*Rotation.Pitch += InputMng->DeltaMove.Y * ControlRotSpeed;
+		Rotation.Yaw += InputMng->DeltaMove.X * ControlRotSpeed;*/
 	}
 
 	Matrix44 GetPerspectiveMatrix()
@@ -56,7 +59,8 @@ public:
 
 
 	Vector3D Location{-500, 0, 0};
-	Rotator Rotation{0, 20, 0};
+	Rotator Rotation{0, 0, 0};
 
-	float ControlMoveSpeed = 5.f;
+	float ControlMoveSpeed = 4.f;
+	float ControlRotSpeed = 0.01f;
 };

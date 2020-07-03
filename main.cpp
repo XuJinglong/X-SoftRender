@@ -5,6 +5,7 @@
 
 LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam);
 bool bCanExit = false;
+ERenderMode InputMode = ERenderMode::Shape;
 
 int main()
 {
@@ -62,6 +63,7 @@ int main()
     RenderInstance->Init(HWnd);
     while(!bCanExit)
     {
+		RenderInstance->RenderMode = InputMode;
         RenderInstance->Update();
         //dispatch message
         MSG Msg;
@@ -90,6 +92,10 @@ LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam)
         {
             bCanExit = true;
         }
+		else if (WParam == 'O')
+		{
+			InputMode = InputMode == ERenderMode::Shape ? ERenderMode::WireFrame : ERenderMode::Shape;
+		}
 		else if (WParam == 'W')
 		{
 			InputMng->FrontDelta = 0;
@@ -141,6 +147,30 @@ LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam)
 		else if (WParam == 'E')
 		{
 			InputMng->UpDelta = -0.1;
+		}
+		break;
+	}
+	case WM_MOUSEMOVE:
+	{
+		if (WParam == MK_LBUTTON) 
+		{
+			float XPos = LOWORD(LParam);
+			float YPos = HIWORD(LParam);
+			if (InputMng->bStartTouchMove)
+			{
+				InputMng->DeltaMove = Vector2D(XPos - InputMng->LastMousePos.X, YPos - InputMng->LastMousePos.Y);
+			}
+			else 
+			{
+				InputMng->bStartTouchMove = true;
+			}
+			InputMng->LastMousePos = Vector2D(XPos, YPos);
+		}
+		else 
+		{
+			InputMng->bStartTouchMove = false;
+			InputMng->LastMousePos = Vector2D();
+			InputMng->DeltaMove = Vector2D();
 		}
 		break;
 	}
