@@ -6,10 +6,12 @@
 #include "RawBox.h"
 #include "Texture.h"
 
-enum class ERenderMode 
+enum class ERenderMode
 {
-	WireFrame,
-	Shape
+    WireFrame,
+    Texture,
+    Color,
+    Max
 };
 
 class Render
@@ -38,9 +40,8 @@ private:
     uint32_t* ColorBuffer = nullptr;
 	float* ZBuffer = nullptr;
 
-	bool bUseTexture = true;
 	Texture* Image;
 public:
-	ERenderMode RenderMode = ERenderMode::Shape;
+	ERenderMode RenderMode = ERenderMode::Texture;
 	uint32_t WireFrameThickness = 1;
 };

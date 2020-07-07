@@ -67,13 +67,15 @@ void Render::DrawTriangle(const RawVertex& V1, const RawVertex& V2, const RawVer
 void Render::DrawUpTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3, bool bDivided)
 {
 	//注意填充规则
-	//统一下加上减，避免毛刺、缺线、多线、重线
+	//统一下加上取整，避免毛刺、缺线、多线、重线
 	//Draw Pixels
 	RawVertex LeftEnd = V1.X < V2.X ? V1 : V2;
 	RawVertex RightEnd = V1.X > V2.X ? V1 : V2;
 
 	//TODO:屏幕空间裁剪
 	//Scane lines
+	float LastLeftX = LeftEnd.X;
+	float LastRightX = RightEnd.X;
 	int ScanY = V1.Y + 1;
 	while (ScanY < (int)(V3.Y + 1))
 	{
@@ -89,7 +91,7 @@ void Render::DrawUpTriangle(const RawVertex& V1, const RawVertex& V2, const RawV
 		int Row = ScanY;
 		int Column = 0;
 
-		if (RenderMode == ERenderMode::Shape) 
+		if (RenderMode == ERenderMode::Texture || RenderMode == ERenderMode::Color)
 		{
 			for (int i = LeftX; i < (int)RightX; i++) 
 			{
@@ -100,7 +102,7 @@ void Render::DrawUpTriangle(const RawVertex& V1, const RawVertex& V2, const RawV
 				{
 					if (ZBuffer[Row * ViewWidth + Column] >= XLerpVex.Z) 
 					{
-						if (bUseTexture) 
+						if (RenderMode == ERenderMode::Texture)
 						{
 							ColorBuffer[Row * ViewWidth + Column] = Image->GetColorNum(XLerpVex.Tex_X, XLerpVex.Tex_Y);
 						}
@@ -146,8 +148,67 @@ void Render::DrawUpTriangle(const RawVertex& V1, const RawVertex& V2, const RawV
 					}
 				}
 			}
+
+			float Min = min(LastLeftX, LeftX);
+			float Max = max(LastLeftX, LeftX);
+
+			for (int i = Min + 1; i < Max; i++)
+			{
+				for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+				{
+					Column = j;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
+				}
+			}
+
+			Min = min(LastRightX, RightX);
+			Max = max(LastRightX, RightX);
+			for (int i = Min + 1; i < Max; i++)
+			{
+				for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+				{
+					Column = j;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
+				}
+			}
 		}
+		LastLeftX = LeftX;
+		LastRightX = RightX;
 		ScanY += 1;
+	}
+	float Min = min(LastLeftX, V3.X);
+	float Max = max(LastLeftX, V3.X);
+	int Row = ScanY;
+	for (int i = Min + 1; i < Max; i++)
+	{
+		for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+		{
+			int Column = j;
+			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+			{
+				ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+			}
+		}
+	}
+
+	Min = min(LastRightX, V3.X);
+	Max = max(LastRightX, V3.X);
+	for (int i = Min + 1; i < Max; i++)
+	{
+		for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+		{
+			int Column = j;
+			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+			{
+				ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+			}
+		}
 	}
 }
 
@@ -160,6 +221,8 @@ void Render::DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const Ra
 
 	//TODO:屏幕空间裁剪
 	//Scane lines
+	float LastLeftX = V1.X;
+	float LastRightX = V1.X;
 	int ScanY = V1.Y + 1;
 	while (ScanY < int(V3.Y + 1))
 	{
@@ -173,14 +236,14 @@ void Render::DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const Ra
 		int Row = ScanY;
 		int Column = 0;
 
-		if (LeftX == RightX) 
+		/*if (LeftX == RightX) 
 		{
 			Column = RightX;
 			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
 			{
 				if (ZBuffer[Row * ViewWidth + Column] >= LeftVex.Z)
 				{
-					if (bUseTexture)
+					if (RenderMode == ERenderMode::Texture)
 					{
 						ColorBuffer[Row * ViewWidth + Column] = Image->GetColorNum(LeftVex.Tex_X, LeftVex.Tex_Y);
 					}
@@ -191,9 +254,9 @@ void Render::DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const Ra
 					ZBuffer[Row * ViewWidth + Column] = LeftVex.Z;
 				}
 			}
-		}
+		}*/
 
-		if (RenderMode == ERenderMode::Shape)
+		if (RenderMode == ERenderMode::Texture || RenderMode == ERenderMode::Color)
 		{
 			for (int i = LeftX; i < (int)RightX; i++)
 			{
@@ -204,7 +267,7 @@ void Render::DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const Ra
 				{
 					if (ZBuffer[Row * ViewWidth + Column] >= XLerpVex.Z)
 					{
-						if (bUseTexture)
+						if (RenderMode == ERenderMode::Texture)
 						{
 							ColorBuffer[Row * ViewWidth + Column] = Image->GetColorNum(XLerpVex.Tex_X, XLerpVex.Tex_Y);
 						}
@@ -250,8 +313,68 @@ void Render::DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const Ra
 					}
 				}
 			}
+
+			float Min = min(LastLeftX, LeftX);
+			float Max = max(LastLeftX, LeftX);
+
+			for (int i = Min + 1; i < Max; i++)
+			{
+				for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+				{
+					Column = j;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
+				}
+			}
+
+			Min = min(LastRightX, RightX);
+			Max = max(LastRightX, RightX);
+			for (int i = Min + 1; i < Max; i++)
+			{
+				for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+				{
+					Column = j;
+					if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					}
+				}
+			}
 		}
+		LastLeftX = LeftX;
+		LastRightX = RightX;
 		ScanY += 1;
+	}
+
+	float Min = min(LastLeftX, LeftEnd.X);
+	float Max = max(LastLeftX, LeftEnd.X);
+	int Row = ScanY;
+	for (int i = Min + 1; i < Max; i++)
+	{
+		for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+		{
+			int Column = j;
+			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+			{
+				ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+			}
+		}
+	}
+
+	Min = min(LastRightX, RightEnd.X);
+	Max = max(LastRightX, RightEnd.X);
+	for (int i = Min + 1; i < Max; i++)
+	{
+		for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+		{
+			int Column = j;
+			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+			{
+				ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+			}
+		}
 	}
 }
 

@@ -5,7 +5,7 @@
 
 LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam);
 bool bCanExit = false;
-ERenderMode InputMode = ERenderMode::Shape;
+ERenderMode InputMode = ERenderMode::Texture;
 
 int main()
 {
@@ -94,7 +94,7 @@ LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam)
         }
 		else if (WParam == 'O')
 		{
-			InputMode = InputMode == ERenderMode::Shape ? ERenderMode::WireFrame : ERenderMode::Shape;
+			InputMode = (ERenderMode)(((int)InputMode  + 1) % (int)ERenderMode::Max);
 		}
 		else if (WParam == 'W')
 		{
