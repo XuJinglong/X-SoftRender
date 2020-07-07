@@ -73,3 +73,13 @@ public:
 	float Yaw = 0.f;
 	float Roll = 0.f;
 };
+
+class MathUtils 
+{
+public:
+	static float LineLerp(float Low, float High, float Alpha) 
+	{
+		Alpha = Alpha < 0 ? 0 : Alpha > 1 ? 1 : Alpha;
+		return Low + Alpha * (High - Low);
+	}
+};

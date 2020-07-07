@@ -1,17 +1,20 @@
 #include "Render.h"
-#include "RawBox.h"
 #include "Camera.h"
 
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 Render::Render()
 {
+	ZBuffer = new float[ViewHeight * ViewWidth];
+	Image = new Texture("./X-SoftRender/Resources/container.jpg");
 }
 
 Render::~Render()
 {
-
+	delete[] ZBuffer;
+	delete Image;
 }
 
 
@@ -36,13 +39,13 @@ void Render::Exit()
 	DeleteDC(BufferDC);
 }
 
-void Render::DrawTriangle(Point2D V1, Point2D V2, Point2D V3)
+void Render::DrawTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3)
 {
-	std::vector<Point2D> OrderPoints = {V1, V2, V3};
-	std::sort(OrderPoints.begin(), OrderPoints.end(), [](const Point2D& P1, const Point2D& P2) {return P1.Y < P2.Y; });
-	Point2D Low = OrderPoints[0];
-	Point2D Mid = OrderPoints[1];
-	Point2D High = OrderPoints[2];
+	std::vector<RawVertex> OrderPoints = {V1, V2, V3};
+	std::sort(OrderPoints.begin(), OrderPoints.end(), [](const RawVertex& P1, const RawVertex& P2) {return P1.Y < P2.Y; });
+	RawVertex Low = OrderPoints[0];
+	RawVertex Mid = OrderPoints[1];
+	RawVertex High = OrderPoints[2];
 	if (Mid.Y == Low.Y) 
 	{
 		DrawUpTriangle(Low, Mid, High);
@@ -53,29 +56,33 @@ void Render::DrawTriangle(Point2D V1, Point2D V2, Point2D V3)
 	}
 	else 
 	{
-		Point2D DivPoint;
-		DivPoint.Y = Mid.Y;
-		DivPoint.X = Low.X + (High.X - Low.X) * (Mid.Y - Low.Y) / (High.Y - Low.Y);
+		float Alpha = (Mid.Y - Low.Y) / (High.Y - Low.Y);
+		RawVertex DivPoint = RawVertex::LineLerp(Low, High, Alpha);
+
 		DrawUpTriangle(DivPoint, Mid, High, true);
 		DrawDownTriangle(Low, Mid, DivPoint, true);
 	}
 }
 
-void Render::DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
+void Render::DrawUpTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3, bool bDivided)
 {
 	//注意填充规则
 	//统一下加上减，避免毛刺、缺线、多线、重线
 	//Draw Pixels
-	Point2D LeftEnd = V1.X < V2.X ? V1 : V2;
-	Point2D RightEnd = V1.X > V2.X ? V1 : V2;
+	RawVertex LeftEnd = V1.X < V2.X ? V1 : V2;
+	RawVertex RightEnd = V1.X > V2.X ? V1 : V2;
 
 	//TODO:屏幕空间裁剪
 	//Scane lines
 	int ScanY = V1.Y + 1;
 	while (ScanY < (int)(V3.Y + 1))
 	{
-		float LeftX = LeftEnd.X + (ScanY - LeftEnd.Y) * (V3.X - LeftEnd.X) / (V3.Y - LeftEnd.Y);
-		float RightX = RightEnd.X + (ScanY - RightEnd.Y) * (V3.X - RightEnd.X) / (V3.Y - RightEnd.Y);
+		float Alpha = (ScanY - LeftEnd.Y) / (V3.Y - LeftEnd.Y);
+		RawVertex LeftVex = RawVertex::LineLerp(LeftEnd, V3, Alpha);
+		RawVertex RightVex = RawVertex::LineLerp(RightEnd, V3, Alpha);
+
+		float LeftX = LeftVex.X;
+		float RightX = RightVex.X;
 
 		if (LeftX == RightX) return;
 
@@ -87,9 +94,22 @@ void Render::DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 			for (int i = LeftX; i < (int)RightX; i++) 
 			{
 				Column = i;
+				float AlphaX = (i - LeftX) / (RightX - LeftX);
+				RawVertex XLerpVex = RawVertex::LineLerp(LeftVex, RightVex, AlphaX);
 				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
 				{
-					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					if (ZBuffer[Row * ViewWidth + Column] >= XLerpVex.Z) 
+					{
+						if (bUseTexture) 
+						{
+							ColorBuffer[Row * ViewWidth + Column] = Image->GetColorNum(XLerpVex.Tex_X, XLerpVex.Tex_Y);
+						}
+						else 
+						{
+							ColorBuffer[Row * ViewWidth + Column] = XLerpVex.Color.ToColorNum();
+						}
+						ZBuffer[Row * ViewWidth + Column] = XLerpVex.Z;
+					}
 				}
 			}
 		}
@@ -131,20 +151,24 @@ void Render::DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 	}
 }
 
-void Render::DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
+void Render::DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3, bool bDivided)
 {
 	//注意填充规则
 	//Draw Pixels
-	Point2D LeftEnd = V2.X < V3.X ? V2 : V3;
-	Point2D RightEnd = V2.X > V3.X ? V2 : V3;
+	RawVertex LeftEnd = V2.X < V3.X ? V2 : V3;
+	RawVertex RightEnd = V2.X > V3.X ? V2 : V3;
 
 	//TODO:屏幕空间裁剪
 	//Scane lines
 	int ScanY = V1.Y + 1;
 	while (ScanY < int(V3.Y + 1))
 	{
-		float LeftX = LeftEnd.X + (ScanY - LeftEnd.Y) * (V1.X - LeftEnd.X) / (V1.Y - LeftEnd.Y);
-		float RightX = RightEnd.X + (ScanY - RightEnd.Y) * (V1.X - RightEnd.X) / (V1.Y - RightEnd.Y);
+		float Alpha = (ScanY - LeftEnd.Y) / (V1.Y - LeftEnd.Y);
+		RawVertex LeftVex = RawVertex::LineLerp(LeftEnd, V1, Alpha);
+		RawVertex RightVex = RawVertex::LineLerp(RightEnd, V1, Alpha);
+
+		float LeftX = LeftVex.X;
+		float RightX = RightVex.X;
 
 		int Row = ScanY;
 		int Column = 0;
@@ -154,7 +178,18 @@ void Render::DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 			Column = RightX;
 			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
 			{
-				ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+				if (ZBuffer[Row * ViewWidth + Column] >= LeftVex.Z)
+				{
+					if (bUseTexture)
+					{
+						ColorBuffer[Row * ViewWidth + Column] = Image->GetColorNum(LeftVex.Tex_X, LeftVex.Tex_Y);
+					}
+					else
+					{
+						ColorBuffer[Row * ViewWidth + Column] = LeftVex.Color.ToColorNum();
+					}
+					ZBuffer[Row * ViewWidth + Column] = LeftVex.Z;
+				}
 			}
 		}
 
@@ -163,9 +198,22 @@ void Render::DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided)
 			for (int i = LeftX; i < (int)RightX; i++)
 			{
 				Column = i;
+				float AlphaX = (i - LeftX) / (RightX - LeftX);
+				RawVertex XLerpVex = RawVertex::LineLerp(LeftVex, RightVex, AlphaX);
 				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
 				{
-					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+					if (ZBuffer[Row * ViewWidth + Column] >= XLerpVex.Z)
+					{
+						if (bUseTexture)
+						{
+							ColorBuffer[Row * ViewWidth + Column] = Image->GetColorNum(XLerpVex.Tex_X, XLerpVex.Tex_Y);
+						}
+						else
+						{
+							ColorBuffer[Row * ViewWidth + Column] = XLerpVex.Color.ToColorNum();
+						}
+						ZBuffer[Row * ViewWidth + Column] = XLerpVex.Z;
+					}
 				}
 			}
 		}
@@ -212,7 +260,8 @@ void Render::Update()
 	//Draw back ground
 	for (int i = 0; i < ViewWidth * ViewHeight; i++)
 	{
-		ColorBuffer[i] = 0x0000ff;
+		ColorBuffer[i] = 0x334c4c;
+		ZBuffer[i] = 1000000.f;
 	}
 
 	static RawBox* Box = new RawBox();
@@ -242,7 +291,7 @@ void Render::Update()
 			float ScreenX = OutPoint.Y;
 			float ScreenY = OutPoint.Z;
 			DefaultCamera->TransViewToScreen(ViewWidth, ViewHeight, ScreenX, ScreenY);
-			OutTriangle.Vertexs[j] = RawVertex(ScreenX, ScreenY, Depth);
+			OutTriangle.Vertexs[j] = RawVertex(ScreenX, ScreenY, Depth, SrcTri.Vertexs[j].Tex_X, SrcTri.Vertexs[j].Tex_Y, SrcTri.Vertexs[j].Color);
 		}
 		ScreenTriangles.push_back(OutTriangle);
 	}
@@ -250,11 +299,7 @@ void Render::Update()
 	//Rasterization
 	for (auto Tri : ScreenTriangles) 
 	{
-		Point2D V1(Tri.Vertexs[0].X, Tri.Vertexs[0].Y);
-		Point2D V2(Tri.Vertexs[1].X, Tri.Vertexs[1].Y);
-		Point2D V3(Tri.Vertexs[2].X, Tri.Vertexs[2].Y);
-
-		DrawTriangle(V1, V2, V3);
+		DrawTriangle(Tri.Vertexs[0], Tri.Vertexs[1], Tri.Vertexs[2]);
 	}
 
 	//TODO:深度测试

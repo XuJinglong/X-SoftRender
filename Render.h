@@ -3,6 +3,8 @@
 #include <Windows.h>
 #include <stdint.h>
 #include "MathLib.h"
+#include "RawBox.h"
+#include "Texture.h"
 
 enum class ERenderMode 
 {
@@ -21,9 +23,9 @@ public:
     void Exit();
 
 private:
-	void DrawTriangle(Point2D V1, Point2D V2, Point2D V3);
-	void DrawUpTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided = false);
-	void DrawDownTriangle(Point2D V1, Point2D V2, Point2D V3, bool bDivided = false);
+	void DrawTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3);
+	void DrawUpTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3, bool bDivided = false);
+	void DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3, bool bDivided = false);
 private:
     static const int ViewWidth = 600;
     static const int ViewHeight = 600;
@@ -34,6 +36,10 @@ private:
     HBITMAP BitMap = nullptr;
 
     uint32_t* ColorBuffer = nullptr;
+	float* ZBuffer = nullptr;
+
+	bool bUseTexture = true;
+	Texture* Image;
 public:
 	ERenderMode RenderMode = ERenderMode::Shape;
 	uint32_t WireFrameThickness = 1;
