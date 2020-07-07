@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "MathLib.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -29,13 +30,17 @@ void Texture::LoadImage(const char* ImagePath)
 
 uint32_t Texture::GetColorNum(float Tex_x, float Tex_y)
 {
-	uint32_t Tx = Tex_x * Width;
-	uint32_t Ty = Tex_y * Height;
+	uint32_t Tx = MathUtils::Clamp(Tex_x, 0.f, 0.9999f) * Width;
+	uint32_t Ty = MathUtils::Clamp(Tex_y, 0.f, 0.9999f) * Height;
 	if (Data)
 	{
 		uint32_t R = Data[Width * Tx * NChannels + Ty * NChannels + 0];
 		uint32_t G = Data[Width * Tx * NChannels + Ty * NChannels + 1];
 		uint32_t B = Data[Width * Tx * NChannels + Ty * NChannels + 2];
+		if (R == 0 || G == 0 || B == 0) 
+		{
+			return 0xffffff;
+		}
 		return (R << 16) + (G << 8) + B;
 	}
 	return 0xffffff;

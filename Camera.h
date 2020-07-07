@@ -61,6 +61,6 @@ public:
 	Vector3D Location{-500, 0, 0};
 	Rotator Rotation{0, 0, 0};
 
-	float ControlMoveSpeed = 4.f;
-	float ControlRotSpeed = 0.01f;
+	float ControlMoveSpeed = 10.f;
+	float ControlRotSpeed = 0.02f;
 };
