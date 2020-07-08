@@ -45,20 +45,34 @@ void Render::RayTracingDrawTriangles(Camera* Camera, RawBox* DrawBox)
 {
 	Timer FrameTimer;
 	FrameTimer.Start();
+	Matrix44 WroldMatrix = DrawBox->GetWorldMatrix();
+	for (int i = 0; i < 12; i++) 
+	{
+		const RawTriangle& Tri = DrawBox->TriList[i];
+		for (int j = 0; j < 3; j++) 
+		{
+			const RawVertex& V = Tri.Vertexs[j];
+			Vector4D WorldPoint = Vector4D(V.X, V.Y, V.Z) * WroldMatrix;
+
+			DrawBox->TransTriList[i].Vertexs[j].X = WorldPoint.X;
+			DrawBox->TransTriList[i].Vertexs[j].Y = WorldPoint.Y;
+			DrawBox->TransTriList[i].Vertexs[j].Z = WorldPoint.Z;
+		}
+	}
 	for (int i = 0; i < ViewHeight; i++) 
 	{
 		for (int j = 0; j < ViewWidth; j++) 
 		{
 			Vector3D TraceStart = Camera->Location;
 			//屏幕交点从屏幕空间转换为相机空间视平面上的点
-			Vector3D ScreenPoint = Camera->TransScreenToView(ViewWidth, ViewHeight, i + 0.5, j + 0.5);
+			Vector3D ScreenPoint = Camera->TransScreenToView(ViewWidth, ViewHeight, j + 0.5, i + 0.5);
 			//相机空间变为世界坐标系
 			Vector4D IntersectPoint4D = Vector4D(ScreenPoint.X, ScreenPoint.Y, ScreenPoint.Z) * Camera->GetCameraInverseMatrix();
 			Vector3D Direction = Vector3D(IntersectPoint4D.X - TraceStart.X, IntersectPoint4D.Y - TraceStart.Y, IntersectPoint4D.Z - TraceStart.Z).Normalize();
 
 			for (int t = 0; t < 12; t++)
 			{
-				auto Tri = DrawBox->TriList[t];
+				RawTriangle& Tri = DrawBox->TransTriList[t];
 
 				RawVertex RayCastV;
 				bool bTrace = GetRayCastPoint(Tri.Vertexs[0], Tri.Vertexs[1], Tri.Vertexs[2], TraceStart, Direction, RayCastV);
@@ -446,18 +460,27 @@ bool Render::GetRayCastPoint(const RawVertex& V1, const RawVertex& V2, const Raw
 	Vector3D P = D.Cross(E2);
 	Vector3D Q = T.Cross(E1);
 	float Denominator = P.Dot(E1);
+	if (abs(Denominator) < 0.0001f) 
+	{
+		return false;
+	}
 	t = Q.Dot(E2) / Denominator;
 	u = P.Dot(T) / Denominator;
 	v = Q.Dot(D) / Denominator;
-	Vector3D TracePoint = P1 * (1 - u - v) + P2 * u + P3 * v;
-	RayCastV.X = TracePoint.X;
-	RayCastV.Y = TracePoint.Y;
-	RayCastV.Z = TracePoint.Z;
-	RayCastV.Color = V1.Color * (1 - u - v) + V2.Color * u + V3.Color * v;
-	RayCastV.Tex_X = V1.Tex_X * (1 - u - v) + V2.Tex_X * u + V3.Tex_X * v;
-	RayCastV.Tex_Y = V1.Tex_Y * (1 - u - v) + V2.Tex_Y * u + V3.Tex_Y * v;
 
-	return t > 0.f && u >= 0.f && u <= 1.f && v >= 0.f && v <= 1.f;
+	bool bTrace = t > 0.f && u >= 0.f && u <= 1.f && v >= 0.f && (u + v) <= 1.f;
+	if (bTrace) 
+	{
+		Vector3D TracePoint = P1 * (1 - u - v) + P2 * u + P3 * v;
+		RayCastV.X = TracePoint.X;
+		RayCastV.Y = TracePoint.Y;
+		RayCastV.Z = (TracePoint - TraceStart).Length();
+		RayCastV.Color = V1.Color * (1 - u - v) + V2.Color * u + V3.Color * v;
+		RayCastV.Tex_X = V1.Tex_X * (1 - u - v) + V2.Tex_X * u + V3.Tex_X * v;
+		RayCastV.Tex_Y = V1.Tex_Y * (1 - u - v) + V2.Tex_Y * u + V3.Tex_Y * v;
+	}
+
+	return bTrace;
 }
 
 void Render::Update()

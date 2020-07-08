@@ -145,4 +145,31 @@ public:
 		{VertexList[1], VertexList[5], VertexList[7]},
 		{VertexList[1], VertexList[7], VertexList[3]}
 	};
+
+	RawTriangle TransTriList[12] =
+	{
+		//front
+		{VertexList[0], VertexList[1], VertexList[3]},
+		{VertexList[0], VertexList[3], VertexList[2]},
+
+		//back
+		{VertexList[5], VertexList[4], VertexList[6]},
+		{VertexList[5], VertexList[6], VertexList[7]},
+
+		//up
+		{VertexList[4], VertexList[5], VertexList[1]},
+		{VertexList[4], VertexList[1], VertexList[0]},
+
+		//down
+		{VertexList[6], VertexList[2], VertexList[3]},
+		{VertexList[6], VertexList[3], VertexList[7]},
+
+		//left
+		{VertexList[4], VertexList[0], VertexList[2]},
+		{VertexList[4], VertexList[2], VertexList[6]},
+
+		//right
+		{VertexList[1], VertexList[5], VertexList[7]},
+		{VertexList[1], VertexList[7], VertexList[3]}
+	};
 };
