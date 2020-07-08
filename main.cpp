@@ -6,6 +6,7 @@
 LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam);
 bool bCanExit = false;
 ERenderMode InputMode = ERenderMode::Texture;
+ERenderStyle InputRenderStyle = ERenderStyle::Front;
 
 int main()
 {
@@ -64,6 +65,7 @@ int main()
     while(!bCanExit)
     {
 		RenderInstance->RenderMode = InputMode;
+		RenderInstance->RenderStyle = InputRenderStyle;
         RenderInstance->Update();
         //dispatch message
         MSG Msg;
@@ -95,6 +97,10 @@ LRESULT CALLBACK WinProc(HWND HWnd, UINT UMsg, WPARAM WParam, LPARAM LParam)
 		else if (WParam == 'O')
 		{
 			InputMode = (ERenderMode)(((int)InputMode  + 1) % (int)ERenderMode::Max);
+		}
+		else if (WParam == 'P')
+		{
+			InputRenderStyle = (ERenderStyle)(((int)InputRenderStyle + 1) % (int)ERenderStyle::Max);
 		}
 		else if (WParam == 'W')
 		{

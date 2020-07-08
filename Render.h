@@ -14,6 +14,13 @@ enum class ERenderMode
     Max
 };
 
+enum class ERenderStyle
+{
+	Front,
+	RayTrace,
+	Max
+};
+
 class Render
 {
 public:
@@ -25,9 +32,12 @@ public:
     void Exit();
 
 private:
+	void RayTracingDrawTriangles(class Camera* Camera, class RawBox* DrawBox);
 	void DrawTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3);
 	void DrawUpTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3, bool bDivided = false);
 	void DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3, bool bDivided = false);
+
+	bool GetRayCastPoint(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3, const Vector3D& TraceStart, const Vector3D& Direction, RawVertex& RayCastV);
 private:
     static const int ViewWidth = 600;
     static const int ViewHeight = 600;
@@ -44,4 +54,6 @@ private:
 public:
 	ERenderMode RenderMode = ERenderMode::Texture;
 	uint32_t WireFrameThickness = 1;
+
+	ERenderStyle RenderStyle = ERenderStyle::Front;
 };

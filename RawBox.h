@@ -10,12 +10,29 @@ struct RawColor
 	float G = 1.f;
 	float B = 1.f;
 
+	RawColor() {}
+	RawColor(float RIn, float GIn, float BIn) :
+		R(RIn),
+		G(GIn),
+		B(BIn)
+	{
+	}
 	uint32_t ToColorNum() 
 	{
 		uint32_t R_Num = uint32_t(R * 255) << 16;
 		uint32_t G_Num = uint32_t(G * 255) << 8;
 		uint32_t B_Num = B * 255;
 		return R_Num + G_Num + B_Num;
+	}
+
+	RawColor operator* (float Num) const
+	{
+		return RawColor(R * Num, G * Num, B * Num);
+	}
+
+	RawColor operator+ (RawColor Other) const
+	{
+		return RawColor(R + Other.R, G + Other.G, B + Other.B);
 	}
 };
 

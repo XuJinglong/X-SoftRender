@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <iostream>
 
+#include "Timer.h"
+
 Render::Render()
 {
 	ZBuffer = new float[ViewHeight * ViewWidth];
@@ -37,6 +39,45 @@ void Render::Exit()
 	DeleteObject(BitMap);
 	ReleaseDC(DrawWnd, ScreenDC);
 	DeleteDC(BufferDC);
+}
+
+void Render::RayTracingDrawTriangles(Camera* Camera, RawBox* DrawBox)
+{
+	Timer FrameTimer;
+	FrameTimer.Start();
+	for (int i = 0; i < ViewHeight; i++) 
+	{
+		for (int j = 0; j < ViewWidth; j++) 
+		{
+			Vector3D TraceStart = Camera->Location;
+			//屏幕交点从屏幕空间转换为相机空间视平面上的点
+			Vector3D ScreenPoint = Camera->TransScreenToView(ViewWidth, ViewHeight, i + 0.5, j + 0.5);
+			//相机空间变为世界坐标系
+			Vector4D IntersectPoint4D = Vector4D(ScreenPoint.X, ScreenPoint.Y, ScreenPoint.Z) * Camera->GetCameraInverseMatrix();
+			Vector3D Direction = Vector3D(IntersectPoint4D.X - TraceStart.X, IntersectPoint4D.Y - TraceStart.Y, IntersectPoint4D.Z - TraceStart.Z).Normalize();
+
+			for (int t = 0; t < 12; t++)
+			{
+				auto Tri = DrawBox->TriList[t];
+
+				RawVertex RayCastV;
+				bool bTrace = GetRayCastPoint(Tri.Vertexs[0], Tri.Vertexs[1], Tri.Vertexs[2], TraceStart, Direction, RayCastV);
+				if (bTrace && RayCastV.Z < ZBuffer[i * ViewWidth + j])
+				{
+					if (RenderMode == ERenderMode::Color)
+					{
+						ColorBuffer[i * ViewWidth + j] = RayCastV.Color.ToColorNum();
+					}
+					else if (RenderMode == ERenderMode::Texture)
+					{
+						ColorBuffer[i * ViewWidth + j] = Image->GetColorNum(RayCastV.Tex_X, RayCastV.Tex_Y);
+					}
+					ZBuffer[i * ViewWidth + j] = RayCastV.Z;
+				}
+			}
+		}
+	}
+	FrameTimer.End();
 }
 
 void Render::DrawTriangle(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3)
@@ -386,6 +427,39 @@ void Render::DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const Ra
 	}
 }
 
+bool Render::GetRayCastPoint(const RawVertex& V1, const RawVertex& V2, const RawVertex& V3, const Vector3D& TraceStart, const Vector3D& Direction, RawVertex& RayCastV)
+{
+	//计算交点
+	//E12
+	//E13
+	//https://www.cnblogs.com/graphics/archive/2010/08/09/1795348.html
+	float t = -1.f;
+	float u = -1.f;
+	float v = -1.f;
+	Point3D P1(V1.X, V1.Y, V1.Z);
+	Point3D P2(V2.X, V2.Y, V2.Z);
+	Point3D P3(V3.X, V3.Y, V3.Z);
+	Vector3D E1 = P2 - P1;
+	Vector3D E2 = P3 - P1;
+	Vector3D D = Direction;
+	Vector3D T = TraceStart - P1;
+	Vector3D P = D.Cross(E2);
+	Vector3D Q = T.Cross(E1);
+	float Denominator = P.Dot(E1);
+	t = Q.Dot(E2) / Denominator;
+	u = P.Dot(T) / Denominator;
+	v = Q.Dot(D) / Denominator;
+	Vector3D TracePoint = P1 * (1 - u - v) + P2 * u + P3 * v;
+	RayCastV.X = TracePoint.X;
+	RayCastV.Y = TracePoint.Y;
+	RayCastV.Z = TracePoint.Z;
+	RayCastV.Color = V1.Color * (1 - u - v) + V2.Color * u + V3.Color * v;
+	RayCastV.Tex_X = V1.Tex_X * (1 - u - v) + V2.Tex_X * u + V3.Tex_X * v;
+	RayCastV.Tex_Y = V1.Tex_Y * (1 - u - v) + V2.Tex_Y * u + V3.Tex_Y * v;
+
+	return t > 0.f && u >= 0.f && u <= 1.f && v >= 0.f && v <= 1.f;
+}
+
 void Render::Update()
 {
 	//Draw back ground
@@ -399,41 +473,47 @@ void Render::Update()
 	static Camera* DefaultCamera = new Camera();
 	Box->Update();
 	DefaultCamera->Update();
-	//TODO:遮挡剔除和背面消隐
 
-	//Coordinate transform
-	Matrix44 WroldMatrix = Box->GetWorldMatrix();
-	Matrix44 CameraMatrix = DefaultCamera->GetCameraMatrix();
-	Matrix44 PerspectiveMatrix = DefaultCamera->GetPerspectiveMatrix();
-	
-	std::vector<RawTriangle> ScreenTriangles;
-	for (int i = 0; i < 12; i++) 
+	if (RenderStyle == ERenderStyle::Front)
 	{
-		auto SrcTri = Box->TriList[i];
-		RawTriangle OutTriangle;
-		for (int j = 0; j < 3; j++) 
+		//TODO:遮挡剔除和背面消隐
+		//Coordinate transform
+		Matrix44 WroldMatrix = Box->GetWorldMatrix();
+		Matrix44 CameraMatrix = DefaultCamera->GetCameraMatrix();
+		Matrix44 PerspectiveMatrix = DefaultCamera->GetPerspectiveMatrix();
+
+		std::vector<RawTriangle> ScreenTriangles;
+		for (int i = 0; i < 12; i++)
 		{
-			Vector4D SrcPoint(SrcTri.Vertexs[j].X, SrcTri.Vertexs[j].Y, SrcTri.Vertexs[j].Z);
-			Vector4D OutPoint = SrcPoint * WroldMatrix * CameraMatrix * PerspectiveMatrix;
-			//透视除法
-			float Depth = OutPoint.W;
-			OutPoint = Vector4D(OutPoint.X / OutPoint.W, OutPoint.Y / OutPoint.W, OutPoint.Z / OutPoint.W);
-			//转换到屏幕空间：相机空间的y，z变换到屏幕的x，y
-			float ScreenX = OutPoint.Y;
-			float ScreenY = OutPoint.Z;
-			DefaultCamera->TransViewToScreen(ViewWidth, ViewHeight, ScreenX, ScreenY);
-			OutTriangle.Vertexs[j] = RawVertex(ScreenX, ScreenY, Depth, SrcTri.Vertexs[j].Tex_X, SrcTri.Vertexs[j].Tex_Y, SrcTri.Vertexs[j].Color);
+			auto SrcTri = Box->TriList[i];
+			RawTriangle OutTriangle;
+			for (int j = 0; j < 3; j++)
+			{
+				Vector4D SrcPoint(SrcTri.Vertexs[j].X, SrcTri.Vertexs[j].Y, SrcTri.Vertexs[j].Z);
+				Vector4D OutPoint = SrcPoint * WroldMatrix * CameraMatrix * PerspectiveMatrix;
+				//透视除法
+				float Depth = OutPoint.W;
+				OutPoint = Vector4D(OutPoint.X / OutPoint.W, OutPoint.Y / OutPoint.W, OutPoint.Z / OutPoint.W);
+				//转换到屏幕空间：相机空间的y，z变换到屏幕的x，y
+				float ScreenX = OutPoint.Y;
+				float ScreenY = OutPoint.Z;
+				DefaultCamera->TransViewToScreen(ViewWidth, ViewHeight, ScreenX, ScreenY);
+				OutTriangle.Vertexs[j] = RawVertex(ScreenX, ScreenY, Depth, SrcTri.Vertexs[j].Tex_X, SrcTri.Vertexs[j].Tex_Y, SrcTri.Vertexs[j].Color);
+			}
+			ScreenTriangles.push_back(OutTriangle);
 		}
-		ScreenTriangles.push_back(OutTriangle);
-	}
 
-	//Rasterization
-	for (auto Tri : ScreenTriangles) 
+		//Rasterization
+		for (auto Tri : ScreenTriangles)
+		{
+			DrawTriangle(Tri.Vertexs[0], Tri.Vertexs[1], Tri.Vertexs[2]);
+		}
+	}
+	else if (RenderStyle == ERenderStyle::RayTrace)
 	{
-		DrawTriangle(Tri.Vertexs[0], Tri.Vertexs[1], Tri.Vertexs[2]);
+		RayTracingDrawTriangles(DefaultCamera, Box);
 	}
 
-	//TODO:深度测试
 
 	BitBlt(ScreenDC, 0, 0, ViewWidth, ViewHeight, BufferDC, 0, 0, SRCCOPY);
 

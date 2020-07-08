@@ -41,13 +41,34 @@ public:
 		return Ret;
 	}
 
+	Matrix44 GetCameraInverseMatrix() 
+	{
+		Matrix44 Rot = Rotation.GetInverseMatrix();
+		Matrix44 Trans = Matrix44::GetIdentity();
+		Trans[3][0] = Location.X;
+		Trans[3][1] = Location.Y;
+		Trans[3][2] = Location.Z;
+		return Rot * Trans;
+	}
+
 	void TransViewToScreen(float ScreenWidth, float ScreenHeight, float& ScreenX, float& ScreenY)
 	{
 		float HalfViewHeight = ViewDistance * tan(TO_RADIAN(FOV / 2));
 		float HalfViewWidth = HalfViewHeight * WidthHeightRatio;
 		
-		ScreenX = (ScreenX + HalfViewWidth ) * ScreenWidth / (HalfViewHeight * 2);
+		ScreenX = (ScreenX + HalfViewWidth ) * ScreenWidth / (HalfViewWidth * 2);
 		ScreenY = (ScreenY + HalfViewHeight) * ScreenHeight / (HalfViewHeight * 2);
+	}
+
+	Vector3D TransScreenToView(float ScreenWidth, float ScreenHeight, float ScreenX, float ScreenY)
+	{
+		float HalfViewHeight = ViewDistance * tan(TO_RADIAN(FOV / 2));
+		float HalfViewWidth = HalfViewHeight * WidthHeightRatio;
+
+		float ViewY = ScreenX * (HalfViewWidth * 2) / ScreenWidth - HalfViewWidth;
+		float ViewZ = ScreenY * (HalfViewHeight * 2) / ScreenWidth - HalfViewHeight;
+
+		return Vector3D(ViewDistance, ViewY, ViewZ);
 	}
 
 public:
