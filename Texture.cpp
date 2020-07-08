@@ -37,10 +37,6 @@ uint32_t Texture::GetColorNum(float Tex_x, float Tex_y)
 		uint32_t R = Data[Width * Tx * NChannels + Ty * NChannels + 0];
 		uint32_t G = Data[Width * Tx * NChannels + Ty * NChannels + 1];
 		uint32_t B = Data[Width * Tx * NChannels + Ty * NChannels + 2];
-		if (R == 0 || G == 0 || B == 0) 
-		{
-			return 0xffffff;
-		}
 		return (R << 16) + (G << 8) + B;
 	}
 	return 0xffffff;

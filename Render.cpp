@@ -182,31 +182,36 @@ void Render::DrawUpTriangle(const RawVertex& V1, const RawVertex& V2, const RawV
 		LastRightX = RightX;
 		ScanY += 1;
 	}
-	float Min = min(LastLeftX, V3.X);
-	float Max = max(LastLeftX, V3.X);
-	int Row = ScanY;
-	for (int i = Min + 1; i < Max; i++)
+
+	//²¹Ïß
+	if (RenderMode == ERenderMode::WireFrame) 
 	{
-		for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+		float Min = min(LastLeftX, V3.X);
+		float Max = max(LastLeftX, V3.X);
+		int Row = ScanY;
+		for (int i = Min + 1; i < Max; i++)
 		{
-			int Column = j;
-			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+			for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
 			{
-				ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+				int Column = j;
+				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+				{
+					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+				}
 			}
 		}
-	}
 
-	Min = min(LastRightX, V3.X);
-	Max = max(LastRightX, V3.X);
-	for (int i = Min + 1; i < Max; i++)
-	{
-		for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+		Min = min(LastRightX, V3.X);
+		Max = max(LastRightX, V3.X);
+		for (int i = Min + 1; i < Max; i++)
 		{
-			int Column = j;
-			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+			for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
 			{
-				ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+				int Column = j;
+				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+				{
+					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+				}
 			}
 		}
 	}
@@ -348,31 +353,34 @@ void Render::DrawDownTriangle(const RawVertex& V1, const RawVertex& V2, const Ra
 		ScanY += 1;
 	}
 
-	float Min = min(LastLeftX, LeftEnd.X);
-	float Max = max(LastLeftX, LeftEnd.X);
-	int Row = ScanY;
-	for (int i = Min + 1; i < Max; i++)
+	if (RenderMode == ERenderMode::WireFrame) 
 	{
-		for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+		float Min = min(LastLeftX, LeftEnd.X);
+		float Max = max(LastLeftX, LeftEnd.X);
+		int Row = ScanY;
+		for (int i = Min + 1; i < Max; i++)
 		{
-			int Column = j;
-			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+			for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
 			{
-				ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+				int Column = j;
+				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+				{
+					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+				}
 			}
 		}
-	}
 
-	Min = min(LastRightX, RightEnd.X);
-	Max = max(LastRightX, RightEnd.X);
-	for (int i = Min + 1; i < Max; i++)
-	{
-		for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
+		Min = min(LastRightX, RightEnd.X);
+		Max = max(LastRightX, RightEnd.X);
+		for (int i = Min + 1; i < Max; i++)
 		{
-			int Column = j;
-			if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+			for (int j = i - WireFrameThickness / 2 - 1; j < i + WireFrameThickness / 2; j++)
 			{
-				ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+				int Column = j;
+				if (Row >= 0 && Row < ViewHeight && Column > 0 && Column < ViewWidth)
+				{
+					ColorBuffer[Row * ViewWidth + Column] = 0xffffff;
+				}
 			}
 		}
 	}
